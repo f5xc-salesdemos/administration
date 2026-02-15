@@ -1,0 +1,7 @@
+{
+  "repository": {
+    "description": "F5 XC administration and tenant management",
+    "homepage": "https://f5xc-salesdemos.github.io/administration/"
+  },
+  "topics": ["f5xc"]
+}
