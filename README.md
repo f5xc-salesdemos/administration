@@ -1,7 +1,7 @@
 # Administration
 
 [![GitHub Pages Deploy](https://github.com/f5xc-salesdemos/administration/actions/workflows/github-pages-deploy.yml/badge.svg)](https://github.com/f5xc-salesdemos/administration/actions/workflows/github-pages-deploy.yml)
-[![Repo Settings](https://github.com/f5xc-salesdemos/administration/actions/workflows/enforce-repo-settings.yml/badge.svg)](https://github.com/f5xc-salesdemos/administration/actions/workflows/enforce-repo-settings.yml)
+[![Repository Settings](https://github.com/f5xc-salesdemos/administration/actions/workflows/enforce-repo-settings.yml/badge.svg)](https://github.com/f5xc-salesdemos/administration/actions/workflows/enforce-repo-settings.yml)
 [![License](https://img.shields.io/github/license/f5xc-salesdemos/administration)](LICENSE)
 
 F5 XC administration and tenant management
