@@ -55,7 +55,7 @@ exposes GET endpoints for these. Roles can only reference existing `api_group`
 names, and there is no `api_group` scoped exclusively to certificates.
 
 **Mitigation — namespace isolation:** Create a dedicated namespace for
-certificate resources and assign the `cert-admin` role scoped to that
+certificate resources and assign the `example-cert-admin` role scoped to that
 namespace only. The user retains proxy-level permissions but cannot access
 resources in other namespaces, limiting the blast radius of the broader
 api_group scope.
@@ -132,7 +132,7 @@ curl -s -X POST \
   "${F5XC_API_URL}/api/web/custom/namespaces/system/roles" \
   -d '{
     "metadata": {
-      "name": "cert-admin",
+      "name": "example-cert-admin",
       "namespace": "system"
     },
     "spec": {},
@@ -151,7 +151,7 @@ are attached:
 ```bash
 curl -s \
   -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
-  "${F5XC_API_URL}/api/web/custom/namespaces/system/roles/cert-admin" \
+  "${F5XC_API_URL}/api/web/custom/namespaces/system/roles/example-cert-admin" \
   | jq '{name: .object.metadata.name, api_groups: .api_groups}'
 ```
 
@@ -159,7 +159,7 @@ Expected output:
 
 ```json
 {
-  "name": "cert-admin",
+  "name": "example-cert-admin",
   "api_groups": [
     "ves-io-proxy-read",
     "ves-io-proxy-write"
@@ -176,9 +176,9 @@ endpoint:
 curl -s -X PUT \
   -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
   -H "Content-Type: application/json" \
-  "${F5XC_API_URL}/api/web/custom/namespaces/system/roles/cert-admin" \
+  "${F5XC_API_URL}/api/web/custom/namespaces/system/roles/example-cert-admin" \
   -d '{
-    "name": "cert-admin",
+    "name": "example-cert-admin",
     "namespace": "system",
     "spec": {},
     "api_groups": [
@@ -197,7 +197,7 @@ Delete uses the standard role endpoint:
 ```bash
 curl -s -X DELETE \
   -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
-  "${F5XC_API_URL}/api/web/namespaces/system/roles/cert-admin"
+  "${F5XC_API_URL}/api/web/namespaces/system/roles/example-cert-admin"
 ```
 
 ## API Reference

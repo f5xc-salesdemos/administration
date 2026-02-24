@@ -36,7 +36,7 @@ api_group_element  (read-only, system-defined)
    tier you create.** Use the custom role endpoints to attach specific
    `api_groups` to a role.
 
-By selecting the proxy read/write groups, the `cert-admin` role grants SSL/TLS
+By selecting the proxy read/write groups, the `example-cert-admin` role grants SSL/TLS
 certificate management as part of broader proxy resource access.
 
 ## Scope and Limitations
@@ -51,7 +51,7 @@ reference existing group names. No system-defined group is scoped exclusively
 to certificate operations.
 
 **Mitigation — namespace isolation:** Place certificate resources in a
-dedicated namespace and scope the `cert-admin` role to that namespace. This
+dedicated namespace and scope the `example-cert-admin` role to that namespace. This
 prevents the user from accessing proxy resources in other namespaces while
 still granting full certificate management within the isolated namespace.
 
@@ -68,7 +68,7 @@ still granting full certificate management within the isolated namespace.
 
 ## Step 2: Name the Role
 
-Enter `cert-admin` in the **Role Name** field.
+Enter `example-cert-admin` in the **Role Name** field.
 
 Role naming rules:
 
@@ -106,7 +106,7 @@ the role.
 ## Step 5: Verify the Role
 
 1. Navigate to **IAM** &gt; **Roles**
-2. Click **cert-admin** in the role list
+2. Click **example-cert-admin** in the role list
 3. Confirm both API groups are listed
 
 ## References
