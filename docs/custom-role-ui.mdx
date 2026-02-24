@@ -63,20 +63,35 @@ the role.
 2. Click **cert-admin** in the role list
 3. Confirm both API groups are listed
 
-## Understanding the Permission Model
+## How F5 XC RBAC Works
 
 F5 XC uses a three-tier permission model:
 
-- **`api_group_element`** — Defines individual API paths and HTTP methods
-  (e.g., `POST /api/config/.*/certificates`). System-defined; read-only.
-- **`api_group`** — A named collection of elements organized by functional area
-  (e.g., `ves-io-proxy-write` covers all proxy write operations). System-defined;
-  read-only.
-- **`role`** — References api_group names. **This is the only tier you create.**
+```
+api_group_element  (read-only, system-defined)
+       │
+       ▼
+   api_group       (read-only, system-defined)
+       │
+       ▼
+     role           (full CRUD — this is what you create)
+```
 
-A custom role is a named collection of these API groups. By selecting the
-proxy read/write groups, the `cert-admin` role grants SSL/TLS certificate
-management as part of broader proxy resource access.
+1. **`api_group_element`** — Defines a regex path and HTTP methods
+   (e.g., `POST /api/config/.*/certificates`). System-managed; you cannot
+   create, modify, or delete these.
+
+2. **`api_group`** — A named collection of `api_group_element` references,
+   organized by functional area. System-managed; you cannot create, modify, or
+   delete these. Groups use naming conventions like `ves-io-proxy-read` or
+   `f5xc-waap-standard-admin`.
+
+3. **`role`** — References `api_group` names in an array. **This is the only
+   tier you create.** Use the custom role endpoints to attach specific
+   `api_groups` to a role.
+
+By selecting the proxy read/write groups, the `cert-admin` role grants SSL/TLS
+certificate management as part of broader proxy resource access.
 
 ## References
 
