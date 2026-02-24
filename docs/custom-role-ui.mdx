@@ -9,6 +9,36 @@ Cloud Console UI. The role grants access to manage SSL/TLS certificates and
 certificate chains used by HTTP Load Balancers. For the programmatic (API)
 approach, see the [API guide](./custom-role-api).
 
+## How F5 XC RBAC Works
+
+F5 XC uses a three-tier permission model:
+
+```
+api_group_element  (read-only, system-defined)
+       │
+       ▼
+   api_group       (read-only, system-defined)
+       │
+       ▼
+     role           (full CRUD — this is what you create)
+```
+
+1. **`api_group_element`** — Defines a regex path and HTTP methods
+   (e.g., `POST /api/config/.*/certificates`). System-managed; you cannot
+   create, modify, or delete these.
+
+2. **`api_group`** — A named collection of `api_group_element` references,
+   organized by functional area. System-managed; you cannot create, modify, or
+   delete these. Groups use naming conventions like `ves-io-proxy-read` or
+   `f5xc-waap-standard-admin`.
+
+3. **`role`** — References `api_group` names in an array. **This is the only
+   tier you create.** Use the custom role endpoints to attach specific
+   `api_groups` to a role.
+
+By selecting the proxy read/write groups, the `cert-admin` role grants SSL/TLS
+certificate management as part of broader proxy resource access.
+
 ## Prerequisites
 
 - Admin access to the F5 Distributed Cloud Console
@@ -62,36 +92,6 @@ the role.
 1. Navigate to **IAM** &gt; **Roles**
 2. Click **cert-admin** in the role list
 3. Confirm both API groups are listed
-
-## How F5 XC RBAC Works
-
-F5 XC uses a three-tier permission model:
-
-```
-api_group_element  (read-only, system-defined)
-       │
-       ▼
-   api_group       (read-only, system-defined)
-       │
-       ▼
-     role           (full CRUD — this is what you create)
-```
-
-1. **`api_group_element`** — Defines a regex path and HTTP methods
-   (e.g., `POST /api/config/.*/certificates`). System-managed; you cannot
-   create, modify, or delete these.
-
-2. **`api_group`** — A named collection of `api_group_element` references,
-   organized by functional area. System-managed; you cannot create, modify, or
-   delete these. Groups use naming conventions like `ves-io-proxy-read` or
-   `f5xc-waap-standard-admin`.
-
-3. **`role`** — References `api_group` names in an array. **This is the only
-   tier you create.** Use the custom role endpoints to attach specific
-   `api_groups` to a role.
-
-By selecting the proxy read/write groups, the `cert-admin` role grants SSL/TLS
-certificate management as part of broader proxy resource access.
 
 ## References
 
