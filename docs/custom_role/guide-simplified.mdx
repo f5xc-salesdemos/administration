@@ -5,9 +5,9 @@ sidebar:
 ---
 
 This guide walks through creating a custom RBAC role using the F5 Distributed
-Cloud Console UI. The role grants full CRUD access to SSL/TLS certificates and
-certificate chains. For the programmatic (API) approach, see the
-[API guide](./guide).
+Cloud Console UI. The role grants access to manage SSL/TLS certificates and
+certificate chains used by HTTP Load Balancers. For the programmatic (API)
+approach, see the [API guide](./guide).
 
 ## Prerequisites
 
@@ -30,26 +30,27 @@ Role naming rules:
 - Must start with two lowercase letters
 - Maximum 64 characters
 
-## Step 3: Add Certificate API Groups
+## Step 3: Add Proxy API Groups
+
+Certificate permissions are part of the proxy functional area. Add the
+following API groups to grant certificate management access:
 
 1. Click **+ Allowed API Groups**
-2. In the search/filter field, type `certificate`
-3. Select all 10 API groups listed below:
+2. In the search/filter field, type `ves-io-proxy`
+3. Select the following API groups:
 
-| API Group | Permission |
-| --------- | ---------- |
-| `ves-io-schema-certificate-api-create-0` | Create certificates |
-| `ves-io-schema-certificate-api-get-0` | View a certificate |
-| `ves-io-schema-certificate-api-list-0` | List certificates |
-| `ves-io-schema-certificate-api-replace-0` | Update certificates |
-| `ves-io-schema-certificate-api-delete-0` | Delete certificates |
-| `ves-io-schema-certificate_chain-api-create-0` | Create certificate chains |
-| `ves-io-schema-certificate_chain-api-get-0` | View a certificate chain |
-| `ves-io-schema-certificate_chain-api-list-0` | List certificate chains |
-| `ves-io-schema-certificate_chain-api-replace-0` | Update certificate chains |
-| `ves-io-schema-certificate_chain-api-delete-0` | Delete certificate chains |
+| API Group | Grants |
+| --------- | ------ |
+| `ves-io-proxy-read` | Read access to proxy resources including certificates |
+| `ves-io-proxy-write` | Write access to proxy resources including certificates |
 
 4. Click **Save** to confirm the selected API groups
+
+:::note
+These groups cover all proxy-related resources (HTTP Load Balancers, origins,
+routes, certificates, certificate chains, etc.), not just certificates. F5 XC
+organizes permissions by functional area, not by individual resource type.
+:::
 
 ## Step 4: Save the Role
 
@@ -60,25 +61,22 @@ the role.
 
 1. Navigate to **IAM** &gt; **Roles**
 2. Click **cert-admin** in the role list
-3. Confirm all 10 API groups are listed
-4. Click the **Elements** count to inspect the underlying API paths each group
-   grants access to
+3. Confirm both API groups are listed
 
 ## Understanding the Permission Model
 
-API groups are **system-defined** — you do not create them. F5 XC
-pre-creates an API group for every resource and operation following the naming
-convention:
+F5 XC uses a three-tier permission model:
 
-```
-ves-io-schema-\{resource\}-api-\{operation\}-0
-```
+- **`api_group_element`** — Defines individual API paths and HTTP methods
+  (e.g., `POST /api/config/.*/certificates`). System-defined; read-only.
+- **`api_group`** — A named collection of elements organized by functional area
+  (e.g., `ves-io-proxy-write` covers all proxy write operations). System-defined;
+  read-only.
+- **`role`** — References api_group names. **This is the only tier you create.**
 
-Where `{operation}` is one of: `create`, `get`, `list`, `replace`, `delete`.
-
-A custom role is a named collection of these API groups. By selecting the 10
-certificate-related groups, the `cert-admin` role grants full SSL/TLS
-management without exposing any other platform capabilities.
+A custom role is a named collection of these API groups. By selecting the
+proxy read/write groups, the `cert-admin` role grants SSL/TLS certificate
+management as part of broader proxy resource access.
 
 ## References
 
