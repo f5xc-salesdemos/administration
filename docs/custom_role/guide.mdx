@@ -5,8 +5,8 @@ sidebar:
 ---
 
 This guide walks through creating a custom RBAC role in F5 Distributed Cloud
-that grants full CRUD permission on SSL/TLS certificates and certificate
-chains. For a UI-based approach, see the
+that grants permission to manage SSL/TLS certificates and certificate chains
+used by HTTP Load Balancers. For a UI-based approach, see the
 [simplified console guide](./guide-simplified).
 
 ## How F5 XC RBAC Works
@@ -27,13 +27,20 @@ api_group_element  (read-only, system-defined)
    (e.g., `POST /api/config/.*/certificates`). System-managed; you cannot
    create, modify, or delete these.
 
-2. **`api_group`** — A named collection of `api_group_element` references.
-   System-managed; you cannot create, modify, or delete these. Named using the
-   convention `ves-io-schema-{resource}-api-{operation}-0`.
+2. **`api_group`** — A named collection of `api_group_element` references,
+   organized by functional area. System-managed; you cannot create, modify, or
+   delete these. Groups use naming conventions like `ves-io-proxy-read` or
+   `f5xc-waap-standard-admin`.
 
 3. **`role`** — References `api_group` names in an array. **This is the only
    tier you create.** Use the custom role endpoints to attach specific
    `api_groups` to a role.
+
+Certificate operations for HTTP Load Balancers are bundled into the
+`ves-io-proxy-*` api_groups alongside other proxy-related resources (HTTP Load
+Balancers, routes, origins, etc.). There are no standalone certificate-only
+api_groups — the platform organizes permissions by functional area, not by
+individual resource type.
 
 ## Prerequisites
 
@@ -48,51 +55,57 @@ export F5XC_API_URL="https://${F5XC_TENANT}.console.ves.volterra.io"
 export F5XC_API_TOKEN="your-api-token"
 ```
 
-## Step 1: Discover Certificate API Groups
+## Step 1: Discover Proxy API Groups
 
-List all system-defined `api_group` objects and filter for certificate-related
-entries:
+List all system-defined `api_group` objects and filter for proxy-related
+entries (which include certificate permissions):
 
 ```bash
 curl -s \
   -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
   "${F5XC_API_URL}/api/web/namespaces/shared/api_groups" \
-  | jq '[.items[] | select(.name | test("certificate")) | .name]'
+  | jq '[.items[] | select(.name | test("ves-io-proxy")) | .name] | sort'
 ```
 
-Expected output (names may vary by tenant version):
+Expected output:
 
 ```json
 [
-  "ves-io-schema-certificate-api-create-0",
-  "ves-io-schema-certificate-api-delete-0",
-  "ves-io-schema-certificate-api-get-0",
-  "ves-io-schema-certificate-api-list-0",
-  "ves-io-schema-certificate-api-replace-0",
-  "ves-io-schema-certificate_chain-api-create-0",
-  "ves-io-schema-certificate_chain-api-delete-0",
-  "ves-io-schema-certificate_chain-api-get-0",
-  "ves-io-schema-certificate_chain-api-list-0",
-  "ves-io-schema-certificate_chain-api-replace-0"
+  "ves-io-proxy-app-firewall-read",
+  "ves-io-proxy-app-firewall-write",
+  "ves-io-proxy-monitor-read",
+  "ves-io-proxy-monitor-write",
+  "ves-io-proxy-read",
+  "ves-io-proxy-security-read",
+  "ves-io-proxy-security-write",
+  "ves-io-proxy-waf-read",
+  "ves-io-proxy-waf-write",
+  "ves-io-proxy-write"
 ]
 ```
 
-To see what a specific `api_group` contains:
+For certificate management, the relevant groups are:
 
-```bash
-curl -s \
-  -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
-  "${F5XC_API_URL}/api/web/namespaces/shared/api_groups/ves-io-schema-certificate-api-create-0" \
-  | jq .
-```
+| API Group | Grants |
+| --------- | ------ |
+| `ves-io-proxy-read` | Read access to proxy resources including certificates |
+| `ves-io-proxy-write` | Write access to proxy resources including certificates |
+
+:::note
+These groups cover all proxy-related resources (HTTP Load Balancers, origins,
+routes, certificates, certificate chains, etc.), not just certificates. F5 XC
+organizes permissions by functional area. If you need to verify which specific
+API paths a group grants, check the `api_group_elements` endpoint described in
+the API Reference section.
+:::
 
 ## Step 2: Create the Custom Role
 
 Use the custom role creation endpoint. The `api_groups` array references the
 system-defined api_group names discovered in Step 1.
 
-Create the custom role with full CRUD access to both certificates and
-certificate chains:
+Create the custom role with read and write access to proxy resources (including
+certificates and certificate chains):
 
 ```bash
 curl -s -X POST \
@@ -106,16 +119,8 @@ curl -s -X POST \
     },
     "spec": {},
     "api_groups": [
-      "ves-io-schema-certificate-api-create-0",
-      "ves-io-schema-certificate-api-get-0",
-      "ves-io-schema-certificate-api-list-0",
-      "ves-io-schema-certificate-api-replace-0",
-      "ves-io-schema-certificate-api-delete-0",
-      "ves-io-schema-certificate_chain-api-create-0",
-      "ves-io-schema-certificate_chain-api-get-0",
-      "ves-io-schema-certificate_chain-api-list-0",
-      "ves-io-schema-certificate_chain-api-replace-0",
-      "ves-io-schema-certificate_chain-api-delete-0"
+      "ves-io-proxy-read",
+      "ves-io-proxy-write"
     ]
   }'
 ```
@@ -138,16 +143,8 @@ Expected output:
 {
   "name": "cert-admin",
   "api_groups": [
-    "ves-io-schema-certificate-api-create-0",
-    "ves-io-schema-certificate-api-get-0",
-    "ves-io-schema-certificate-api-list-0",
-    "ves-io-schema-certificate-api-replace-0",
-    "ves-io-schema-certificate-api-delete-0",
-    "ves-io-schema-certificate_chain-api-create-0",
-    "ves-io-schema-certificate_chain-api-get-0",
-    "ves-io-schema-certificate_chain-api-list-0",
-    "ves-io-schema-certificate_chain-api-replace-0",
-    "ves-io-schema-certificate_chain-api-delete-0"
+    "ves-io-proxy-read",
+    "ves-io-proxy-write"
   ]
 }
 ```
@@ -167,16 +164,13 @@ curl -s -X PUT \
     "namespace": "system",
     "spec": {},
     "api_groups": [
-      "ves-io-schema-certificate-api-get-0",
-      "ves-io-schema-certificate-api-list-0",
-      "ves-io-schema-certificate_chain-api-get-0",
-      "ves-io-schema-certificate_chain-api-list-0"
+      "ves-io-proxy-read"
     ]
   }'
 ```
 
-This example downgrades the role to read-only access (get and list only) for
-both certificates and certificate chains.
+This example downgrades the role to read-only access by removing
+`ves-io-proxy-write`.
 
 ## Step 5: Delete the Role (Optional)
 
@@ -189,8 +183,6 @@ curl -s -X DELETE \
 ```
 
 ## API Reference
-
-All paths verified against the OpenAPI specs in this repository.
 
 ### Role Endpoints (Custom — includes `api_groups`)
 
@@ -214,9 +206,7 @@ All paths verified against the OpenAPI specs in this repository.
 | Method | Path | Description |
 | ------ | ---- | ----------- |
 | GET | `/api/web/namespaces/{namespace}/api_groups` | List all api_groups |
-| GET | `/api/web/namespaces/{namespace}/api_groups/{name}` | Get an api_group |
 | GET | `/api/web/namespaces/{namespace}/api_group_elements` | List all api_group_elements |
-| GET | `/api/web/namespaces/{namespace}/api_group_elements/{name}` | Get an api_group_element |
 
 ### Certificate Endpoints (What the Role Grants Access To)
 
@@ -237,14 +227,18 @@ All paths verified against the OpenAPI specs in this repository.
 
 These objects are **system-defined** by F5 XC. The platform pre-creates
 `api_group_element` entries for every API path and groups them into
-`api_group` objects following a consistent naming convention:
-
-```
-ves-io-schema-{resource}-api-{operation}-0
-```
-
-Where `{operation}` is one of: `create`, `get`, `list`, `replace`, `delete`.
+`api_group` objects organized by functional area.
 
 You do not need to create these — they already exist for every resource in the
 system. Your job is to **discover** the relevant group names (Step 1) and
 **reference** them in your custom role (Step 2).
+
+To see which individual API paths an api_group covers, list the
+`api_group_elements` endpoint and look for elements related to your resource:
+
+```bash
+curl -s \
+  -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
+  "${F5XC_API_URL}/api/web/namespaces/shared/api_group_elements" \
+  | jq '[.items[] | select(.name | test("ves-io-schema-certificate")) | .name]'
+```
