@@ -1,13 +1,13 @@
 ---
 title: Certificate Admin Role - API
 sidebar:
-  label: Certificate - API
+  label: Custom Role - API
 ---
 
 This guide walks through creating a custom RBAC role in F5 Distributed Cloud
 that grants permission to manage SSL/TLS certificates and certificate chains
 used by HTTP Load Balancers. For a UI-based approach, see the
-[simplified console guide](./guide-simplified).
+[simplified console guide](./custom-role-ui).
 
 ## How F5 XC RBAC Works
 
@@ -186,29 +186,35 @@ curl -s -X DELETE \
 
 ### Role Endpoints (Custom — includes `api_groups`)
 
+Roles are always in the `system` namespace.
+
 | Method | Path | Description |
 | ------ | ---- | ----------- |
-| POST | `/api/web/custom/namespaces/{namespace}/roles` | Create a custom role |
-| GET | `/api/web/custom/namespaces/{namespace}/roles` | List custom roles |
-| GET | `/api/web/custom/namespaces/{namespace}/roles/{name}` | Get a custom role |
-| PUT | `/api/web/custom/namespaces/{namespace}/roles/{name}` | Replace a custom role |
+| POST | `/api/web/custom/namespaces/system/roles` | Create a custom role |
+| GET | `/api/web/custom/namespaces/system/roles` | List custom roles |
+| GET | `/api/web/custom/namespaces/system/roles/{name}` | Get a custom role |
+| PUT | `/api/web/custom/namespaces/system/roles/{name}` | Replace a custom role |
 
 ### Role Endpoints (Standard)
 
 | Method | Path | Description |
 | ------ | ---- | ----------- |
-| DELETE | `/api/web/namespaces/{namespace}/roles/{name}` | Delete a role |
-| GET | `/api/web/namespaces/{namespace}/roles/{name}` | Get a role |
-| GET | `/api/web/namespaces/{namespace}/roles` | List roles |
+| DELETE | `/api/web/namespaces/system/roles/{name}` | Delete a role |
+| GET | `/api/web/namespaces/system/roles/{name}` | Get a role |
+| GET | `/api/web/namespaces/system/roles` | List roles |
 
 ### Discovery Endpoints (Read-Only)
 
+Discovery uses the `shared` namespace.
+
 | Method | Path | Description |
 | ------ | ---- | ----------- |
-| GET | `/api/web/namespaces/{namespace}/api_groups` | List all api_groups |
-| GET | `/api/web/namespaces/{namespace}/api_group_elements` | List all api_group_elements |
+| GET | `/api/web/namespaces/shared/api_groups` | List all api_groups |
+| GET | `/api/web/namespaces/shared/api_group_elements` | List all api_group_elements |
 
 ### Certificate Endpoints (What the Role Grants Access To)
+
+Replace `{namespace}` with the namespace where your certificates are managed.
 
 | Method | Path | Description |
 | ------ | ---- | ----------- |
