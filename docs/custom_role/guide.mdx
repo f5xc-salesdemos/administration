@@ -46,7 +46,6 @@ Set your environment variables:
 export F5XC_TENANT="your-tenant"
 export F5XC_API_URL="https://${F5XC_TENANT}.console.ves.volterra.io"
 export F5XC_API_TOKEN="your-api-token"
-export F5XC_NAMESPACE="shared"
 ```
 
 ## Step 1: Discover Certificate API Groups
@@ -57,7 +56,7 @@ entries:
 ```bash
 curl -s \
   -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
-  "${F5XC_API_URL}/api/web/namespaces/${F5XC_NAMESPACE}/api_groups" \
+  "${F5XC_API_URL}/api/web/namespaces/shared/api_groups" \
   | jq '[.items[] | select(.name | test("certificate")) | .name]'
 ```
 
@@ -83,7 +82,7 @@ To see what a specific `api_group` contains:
 ```bash
 curl -s \
   -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
-  "${F5XC_API_URL}/api/web/namespaces/${F5XC_NAMESPACE}/api_groups/ves-io-schema-certificate-api-create-0" \
+  "${F5XC_API_URL}/api/web/namespaces/shared/api_groups/ves-io-schema-certificate-api-create-0" \
   | jq .
 ```
 
@@ -99,11 +98,11 @@ certificate chains:
 curl -s -X POST \
   -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
   -H "Content-Type: application/json" \
-  "${F5XC_API_URL}/api/web/custom/namespaces/${F5XC_NAMESPACE}/roles" \
+  "${F5XC_API_URL}/api/web/custom/namespaces/system/roles" \
   -d '{
     "metadata": {
       "name": "cert-admin",
-      "namespace": "'"${F5XC_NAMESPACE}"'"
+      "namespace": "system"
     },
     "spec": {},
     "api_groups": [
@@ -129,7 +128,7 @@ are attached:
 ```bash
 curl -s \
   -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
-  "${F5XC_API_URL}/api/web/custom/namespaces/${F5XC_NAMESPACE}/roles/cert-admin" \
+  "${F5XC_API_URL}/api/web/custom/namespaces/system/roles/cert-admin" \
   | jq '{name: .object.metadata.name, api_groups: .api_groups}'
 ```
 
@@ -162,10 +161,10 @@ endpoint:
 curl -s -X PUT \
   -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
   -H "Content-Type: application/json" \
-  "${F5XC_API_URL}/api/web/custom/namespaces/${F5XC_NAMESPACE}/roles/cert-admin" \
+  "${F5XC_API_URL}/api/web/custom/namespaces/system/roles/cert-admin" \
   -d '{
     "name": "cert-admin",
-    "namespace": "'"${F5XC_NAMESPACE}"'",
+    "namespace": "system",
     "spec": {},
     "api_groups": [
       "ves-io-schema-certificate-api-get-0",
@@ -186,7 +185,7 @@ Delete uses the standard role endpoint:
 ```bash
 curl -s -X DELETE \
   -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
-  "${F5XC_API_URL}/api/web/namespaces/${F5XC_NAMESPACE}/roles/cert-admin"
+  "${F5XC_API_URL}/api/web/namespaces/system/roles/cert-admin"
 ```
 
 ## API Reference
