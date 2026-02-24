@@ -43,7 +43,8 @@ api_group_element  (read-only, system-defined)
 Set your environment variables:
 
 ```bash
-export F5XC_API_URL="https://your-tenant.console.ves.volterra.io"
+export F5XC_TENANT="your-tenant"
+export F5XC_API_URL="https://${F5XC_TENANT}.console.ves.volterra.io"
 export F5XC_API_TOKEN="your-api-token"
 ```
 
