@@ -39,6 +39,22 @@ api_group_element  (read-only, system-defined)
 By selecting the proxy read/write groups, the `cert-admin` role grants SSL/TLS
 certificate management as part of broader proxy resource access.
 
+## Scope and Limitations
+
+Selecting the proxy read/write groups grants access to **all proxy resources**
+in the assigned namespace — HTTP Load Balancers, origins, routes, and
+certificates alike. There is no way to restrict the role to certificates only.
+
+F5 XC does not support user-created `api_group` or `api_group_element`
+objects. The platform pre-defines these as read-only, and roles can only
+reference existing group names. No system-defined group is scoped exclusively
+to certificate operations.
+
+**Mitigation — namespace isolation:** Place certificate resources in a
+dedicated namespace and scope the `cert-admin` role to that namespace. This
+prevents the user from accessing proxy resources in other namespaces while
+still granting full certificate management within the isolated namespace.
+
 ## Prerequisites
 
 - Admin access to the F5 Distributed Cloud Console

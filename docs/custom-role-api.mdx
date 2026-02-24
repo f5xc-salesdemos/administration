@@ -42,6 +42,24 @@ Balancers, routes, origins, etc.). There are no standalone certificate-only
 api_groups — the platform organizes permissions by functional area, not by
 individual resource type.
 
+## Scope and Limitations
+
+The `ves-io-proxy-read` and `ves-io-proxy-write` api_groups grant access to
+**all proxy-related resources**, not just certificates. A user assigned this
+role can also manage HTTP Load Balancers, origins, routes, and other
+proxy-scoped objects.
+
+Certificate-only RBAC is not possible on F5 XC. Both `api_group` and
+`api_group_element` are system-defined, read-only objects — the API only
+exposes GET endpoints for these. Roles can only reference existing `api_group`
+names, and there is no `api_group` scoped exclusively to certificates.
+
+**Mitigation — namespace isolation:** Create a dedicated namespace for
+certificate resources and assign the `cert-admin` role scoped to that
+namespace only. The user retains proxy-level permissions but cannot access
+resources in other namespaces, limiting the blast radius of the broader
+api_group scope.
+
 ## Prerequisites
 
 - An F5 XC API token with admin privileges
