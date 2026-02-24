@@ -1,0 +1,85 @@
+---
+title: Creating a Certificate Administrator Custom Role via the F5 XC Console
+---
+
+This guide walks through creating a custom RBAC role using the F5 Distributed
+Cloud Console UI. The role grants full CRUD access to SSL/TLS certificates and
+certificate chains. For the programmatic (API) approach, see the
+[API guide](./guide).
+
+## Prerequisites
+
+- Admin access to the F5 Distributed Cloud Console
+
+## Step 1: Navigate to Role Management
+
+1. Log in to the F5 Distributed Cloud Console
+2. Click the **Administration** tile on the home page
+3. In the left navigation menu, select **IAM** &gt; **Roles**
+4. Click **+ Add Role**
+
+## Step 2: Name the Role
+
+Enter `cert-admin` in the **Role Name** field.
+
+Role naming rules:
+
+- Lowercase letters, numbers, and hyphens only
+- Must start with two lowercase letters
+- Maximum 64 characters
+
+## Step 3: Add Certificate API Groups
+
+1. Click **+ Allowed API Groups**
+2. In the search/filter field, type `certificate`
+3. Select all 10 API groups listed below:
+
+| API Group | Permission |
+| --------- | ---------- |
+| `ves-io-schema-certificate-api-create-0` | Create certificates |
+| `ves-io-schema-certificate-api-get-0` | View a certificate |
+| `ves-io-schema-certificate-api-list-0` | List certificates |
+| `ves-io-schema-certificate-api-replace-0` | Update certificates |
+| `ves-io-schema-certificate-api-delete-0` | Delete certificates |
+| `ves-io-schema-certificate_chain-api-create-0` | Create certificate chains |
+| `ves-io-schema-certificate_chain-api-get-0` | View a certificate chain |
+| `ves-io-schema-certificate_chain-api-list-0` | List certificate chains |
+| `ves-io-schema-certificate_chain-api-replace-0` | Update certificate chains |
+| `ves-io-schema-certificate_chain-api-delete-0` | Delete certificate chains |
+
+4. Click **Save** to confirm the selected API groups
+
+## Step 4: Save the Role
+
+Review the selected API groups in the summary, then click **Save** to create
+the role.
+
+## Step 5: Verify the Role
+
+1. Navigate to **IAM** &gt; **Roles**
+2. Click **cert-admin** in the role list
+3. Confirm all 10 API groups are listed
+4. Click the **Elements** count to inspect the underlying API paths each group
+   grants access to
+
+## Understanding the Permission Model
+
+API groups are **system-defined** — you do not create them. F5 XC
+pre-creates an API group for every resource and operation following the naming
+convention:
+
+```
+ves-io-schema-\{resource\}-api-\{operation\}-0
+```
+
+Where `{operation}` is one of: `create`, `get`, `list`, `replace`, `delete`.
+
+A custom role is a named collection of these API groups. By selecting the 10
+certificate-related groups, the `cert-admin` role grants full SSL/TLS
+management without exposing any other platform capabilities.
+
+## References
+
+- [Manage Roles — F5 XC Docs](https://docs.cloud.f5.com/docs/how-to/user-mgmt/roles)
+- [RBAC Concepts — F5 XC Docs](https://docs.cloud.f5.com/docs-v2/platform/concepts/rbac)
+- [Programmatic Guide (API)](./guide)

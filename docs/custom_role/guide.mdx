@@ -1,0 +1,249 @@
+---
+title: Creating a Certificate Administrator Custom Role via the F5 XC API
+---
+
+This guide walks through creating a custom RBAC role in F5 Distributed Cloud
+that grants full CRUD permission on SSL/TLS certificates and certificate
+chains. For a UI-based approach, see the
+[simplified console guide](./guide-simplified).
+
+## How F5 XC RBAC Works
+
+F5 XC uses a three-tier permission model:
+
+```
+api_group_element  (read-only, system-defined)
+       │
+       ▼
+   api_group       (read-only, system-defined)
+       │
+       ▼
+     role           (full CRUD — this is what you create)
+```
+
+1. **`api_group_element`** — Defines a regex path and HTTP methods
+   (e.g., `POST /api/config/.*/certificates`). System-managed; you cannot
+   create, modify, or delete these.
+
+2. **`api_group`** — A named collection of `api_group_element` references.
+   System-managed; you cannot create, modify, or delete these. Named using the
+   convention `ves-io-schema-{resource}-api-{operation}-0`.
+
+3. **`role`** — References `api_group` names in an array. **This is the only
+   tier you create.** Use the custom role endpoints to attach specific
+   `api_groups` to a role.
+
+## Prerequisites
+
+- An F5 XC API token with admin privileges
+- `curl` and `jq` installed
+
+Set your environment variables:
+
+```bash
+export F5XC_TENANT="your-tenant"
+export F5XC_API_URL="https://${F5XC_TENANT}.console.ves.volterra.io"
+export F5XC_API_TOKEN="your-api-token"
+export F5XC_NAMESPACE="shared"
+```
+
+## Step 1: Discover Certificate API Groups
+
+List all system-defined `api_group` objects and filter for certificate-related
+entries:
+
+```bash
+curl -s \
+  -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
+  "${F5XC_API_URL}/api/web/namespaces/${F5XC_NAMESPACE}/api_groups" \
+  | jq '[.items[] | select(.name | test("certificate")) | .name]'
+```
+
+Expected output (names may vary by tenant version):
+
+```json
+[
+  "ves-io-schema-certificate-api-create-0",
+  "ves-io-schema-certificate-api-delete-0",
+  "ves-io-schema-certificate-api-get-0",
+  "ves-io-schema-certificate-api-list-0",
+  "ves-io-schema-certificate-api-replace-0",
+  "ves-io-schema-certificate_chain-api-create-0",
+  "ves-io-schema-certificate_chain-api-delete-0",
+  "ves-io-schema-certificate_chain-api-get-0",
+  "ves-io-schema-certificate_chain-api-list-0",
+  "ves-io-schema-certificate_chain-api-replace-0"
+]
+```
+
+To see what a specific `api_group` contains:
+
+```bash
+curl -s \
+  -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
+  "${F5XC_API_URL}/api/web/namespaces/${F5XC_NAMESPACE}/api_groups/ves-io-schema-certificate-api-create-0" \
+  | jq .
+```
+
+## Step 2: Create the Custom Role
+
+Use the custom role creation endpoint. The `api_groups` array references the
+system-defined api_group names discovered in Step 1.
+
+Create the custom role with full CRUD access to both certificates and
+certificate chains:
+
+```bash
+curl -s -X POST \
+  -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "${F5XC_API_URL}/api/web/custom/namespaces/${F5XC_NAMESPACE}/roles" \
+  -d '{
+    "metadata": {
+      "name": "cert-admin",
+      "namespace": "'"${F5XC_NAMESPACE}"'"
+    },
+    "spec": {},
+    "api_groups": [
+      "ves-io-schema-certificate-api-create-0",
+      "ves-io-schema-certificate-api-get-0",
+      "ves-io-schema-certificate-api-list-0",
+      "ves-io-schema-certificate-api-replace-0",
+      "ves-io-schema-certificate-api-delete-0",
+      "ves-io-schema-certificate_chain-api-create-0",
+      "ves-io-schema-certificate_chain-api-get-0",
+      "ves-io-schema-certificate_chain-api-list-0",
+      "ves-io-schema-certificate_chain-api-replace-0",
+      "ves-io-schema-certificate_chain-api-delete-0"
+    ]
+  }'
+```
+
+## Step 3: Verify the Role
+
+Retrieve the role using the custom GET endpoint to confirm the `api_groups`
+are attached:
+
+```bash
+curl -s \
+  -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
+  "${F5XC_API_URL}/api/web/custom/namespaces/${F5XC_NAMESPACE}/roles/cert-admin" \
+  | jq '{name: .object.metadata.name, api_groups: .api_groups}'
+```
+
+Expected output:
+
+```json
+{
+  "name": "cert-admin",
+  "api_groups": [
+    "ves-io-schema-certificate-api-create-0",
+    "ves-io-schema-certificate-api-get-0",
+    "ves-io-schema-certificate-api-list-0",
+    "ves-io-schema-certificate-api-replace-0",
+    "ves-io-schema-certificate-api-delete-0",
+    "ves-io-schema-certificate_chain-api-create-0",
+    "ves-io-schema-certificate_chain-api-get-0",
+    "ves-io-schema-certificate_chain-api-list-0",
+    "ves-io-schema-certificate_chain-api-replace-0",
+    "ves-io-schema-certificate_chain-api-delete-0"
+  ]
+}
+```
+
+## Step 4: Update the Role (Optional)
+
+To add or remove `api_groups` from an existing role, use the custom PUT
+endpoint:
+
+```bash
+curl -s -X PUT \
+  -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "${F5XC_API_URL}/api/web/custom/namespaces/${F5XC_NAMESPACE}/roles/cert-admin" \
+  -d '{
+    "name": "cert-admin",
+    "namespace": "'"${F5XC_NAMESPACE}"'",
+    "spec": {},
+    "api_groups": [
+      "ves-io-schema-certificate-api-get-0",
+      "ves-io-schema-certificate-api-list-0",
+      "ves-io-schema-certificate_chain-api-get-0",
+      "ves-io-schema-certificate_chain-api-list-0"
+    ]
+  }'
+```
+
+This example downgrades the role to read-only access (get and list only) for
+both certificates and certificate chains.
+
+## Step 5: Delete the Role (Optional)
+
+Delete uses the standard role endpoint:
+
+```bash
+curl -s -X DELETE \
+  -H "Authorization: APIToken ${F5XC_API_TOKEN}" \
+  "${F5XC_API_URL}/api/web/namespaces/${F5XC_NAMESPACE}/roles/cert-admin"
+```
+
+## API Reference
+
+All paths verified against the OpenAPI specs in this repository.
+
+### Role Endpoints (Custom — includes `api_groups`)
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| POST | `/api/web/custom/namespaces/{namespace}/roles` | Create a custom role |
+| GET | `/api/web/custom/namespaces/{namespace}/roles` | List custom roles |
+| GET | `/api/web/custom/namespaces/{namespace}/roles/{name}` | Get a custom role |
+| PUT | `/api/web/custom/namespaces/{namespace}/roles/{name}` | Replace a custom role |
+
+### Role Endpoints (Standard)
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| DELETE | `/api/web/namespaces/{namespace}/roles/{name}` | Delete a role |
+| GET | `/api/web/namespaces/{namespace}/roles/{name}` | Get a role |
+| GET | `/api/web/namespaces/{namespace}/roles` | List roles |
+
+### Discovery Endpoints (Read-Only)
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/api/web/namespaces/{namespace}/api_groups` | List all api_groups |
+| GET | `/api/web/namespaces/{namespace}/api_groups/{name}` | Get an api_group |
+| GET | `/api/web/namespaces/{namespace}/api_group_elements` | List all api_group_elements |
+| GET | `/api/web/namespaces/{namespace}/api_group_elements/{name}` | Get an api_group_element |
+
+### Certificate Endpoints (What the Role Grants Access To)
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| POST | `/api/config/namespaces/{namespace}/certificates` | Create a certificate |
+| GET | `/api/config/namespaces/{namespace}/certificates` | List certificates |
+| GET | `/api/config/namespaces/{namespace}/certificates/{name}` | Get a certificate |
+| PUT | `/api/config/namespaces/{namespace}/certificates/{name}` | Replace a certificate |
+| DELETE | `/api/config/namespaces/{namespace}/certificates/{name}` | Delete a certificate |
+| POST | `/api/config/namespaces/{namespace}/certificate_chains` | Create a certificate chain |
+| GET | `/api/config/namespaces/{namespace}/certificate_chains` | List certificate chains |
+| GET | `/api/config/namespaces/{namespace}/certificate_chains/{name}` | Get a certificate chain |
+| PUT | `/api/config/namespaces/{namespace}/certificate_chains/{name}` | Replace a certificate chain |
+| DELETE | `/api/config/namespaces/{namespace}/certificate_chains/{name}` | Delete a certificate chain |
+
+## Why `api_group` and `api_group_element` Are Read-Only
+
+These objects are **system-defined** by F5 XC. The platform pre-creates
+`api_group_element` entries for every API path and groups them into
+`api_group` objects following a consistent naming convention:
+
+```
+ves-io-schema-{resource}-api-{operation}-0
+```
+
+Where `{operation}` is one of: `create`, `get`, `list`, `replace`, `delete`.
+
+You do not need to create these — they already exist for every resource in the
+system. Your job is to **discover** the relevant group names (Step 1) and
+**reference** them in your custom role (Step 2).
